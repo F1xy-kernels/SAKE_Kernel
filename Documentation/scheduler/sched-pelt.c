@@ -37,7 +37,8 @@ void calc_runnable_avg_yN_sum(const int halflife)
 {
 	int i;
 
-	printf("static const u32 runnable_avg_yN_sum[] = {\n\t    0,");
+	/* To silence -Wunused-but-set-variable warnings. */
+	printf("static const u32 runnable_avg_yN_sum[] __maybe_unused = {\n\t    0,");
 	for (i = 1; i <= halflife; i++) {
 		if (i == 1)
 			sum *= y;
@@ -83,7 +84,8 @@ void calc_accumulated_sum_32(const int halflife)
 {
 	int i, x = sum;
 
-	printf("static const u32 __accumulated_sum_N32[] = {\n\t     0,");
+	/* To silence -Wunused-but-set-variable warnings. */
+	printf("static const u32 __accumulated_sum_N32[] __maybe_unused = {\n\t     0,");
 	for (i = 1; i <= n/halflife+1; i++) {
 		if (i > 1)
 			x = x/2 + sum;
