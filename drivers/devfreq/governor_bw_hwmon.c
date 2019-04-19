@@ -24,6 +24,7 @@
 #include <trace/events/power.h>
 #include "governor.h"
 #include "governor_bw_hwmon.h"
+#include <linux/devfreq_boost.h>
 
 #define NUM_MBPS_ZONES		10
 struct hwmon_node {
@@ -618,6 +619,9 @@ static int gov_start(struct devfreq *df)
 		dev_err(dev, "Error creating sys entries: %d\n", ret);
 		goto err_sysfs;
 	}
+
+	if (!strcmp(dev_name(dev), "soc:qcom,cpu-llcc-ddr-bw"))
+		devfreq_register_boost_device(DEVFREQ_MSM_CPUBW, d->df);
 
 	mutex_lock(&df->lock);
 	df->min_freq = df->max_freq;
