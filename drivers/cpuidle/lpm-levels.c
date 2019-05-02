@@ -718,7 +718,7 @@ static int cpu_power_select(struct cpuidle_device *dev,
 	}
 
 done_select:
-	trace_cpu_power_select(best_level, sleep_us, latency_us, cpu->bias);
+	trace_cpu_power_select(best_level, sleep_us, latency_us, 0);
 
 	trace_cpu_pred_select(idx_restrict_time ? 2 : (ipi_predicted ?
 				3 : (predicted ? 1 : 0)), predicted, htime);
@@ -1418,9 +1418,7 @@ static int lpm_cpuidle_enter(struct cpuidle_device *dev,
 	if (idx == cpu->nlevels - 1)
 		program_rimps_timer(cpu);
 
-	cpuidle_set_idle_cpu(dev->cpu);
 	ret = psci_enter_sleep(cpu, idx, true);
-	cpuidle_clear_idle_cpu(dev->cpu);
 	success = (ret == 0);
 
 exit:
