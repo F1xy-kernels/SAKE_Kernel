@@ -3566,11 +3566,9 @@ static void *s_next(struct seq_file *m, void *p, loff_t *pos)
 }
 
 static void s_stop(struct seq_file *m, void *p)
-	__releases(&vmap_purge_lock)
 	__releases(&vmap_area_lock)
 	__releases(&vmap_purge_lock)
 {
-	mutex_unlock(&vmap_purge_lock);
 	spin_unlock(&vmap_area_lock);
 	mutex_unlock(&vmap_purge_lock);
 }
@@ -3635,7 +3633,8 @@ static int s_show(struct seq_file *m, void *p)
 	}
 
 	v = va->vm;
-
+	if (v->flags & VM_LOWMEM)
+		return 0;
 	seq_printf(m, "0x%pK-0x%pK %7ld",
 		v->addr, v->addr + v->size, v->size);
 
@@ -3665,9 +3664,6 @@ static int s_show(struct seq_file *m, void *p)
 
 	if (is_vmalloc_addr(v->pages))
 		seq_puts(m, " vpages");
-
-	if (v->flags & VM_LOWMEM)
-		seq_puts(m, " lowmem");
 
 	show_numa_info(m, v);
 	seq_putc(m, '\n');
