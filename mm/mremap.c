@@ -410,27 +410,14 @@ unsigned long move_page_tables(struct vm_area_struct *vma,
 
 	for (; old_addr < old_end; old_addr += extent, new_addr += extent) {
 		cond_resched();
-		/*
-		 * If extent is PUD-sized try to speed up the move by moving at the
-		 * PUD level if possible.
-		 */
-		extent = get_extent(NORMAL_PUD, old_addr, old_end, new_addr);
-		if (IS_ENABLED(CONFIG_HAVE_MOVE_PUD) && extent == PUD_SIZE) {
-			pud_t *old_pud, *new_pud;
-
-			old_pud = get_old_pud(vma->vm_mm, old_addr);
-			if (!old_pud)
-				continue;
-			new_pud = alloc_new_pud(vma->vm_mm, vma, new_addr);
-			if (!new_pud)
-				break;
-			if (move_pgt_entry(NORMAL_PUD, vma, old_addr, new_addr,
-						old_end, old_pud, new_pud,
-						need_rmap_locks))
-				continue;
-		}
-
-		extent = get_extent(NORMAL_PMD, old_addr, old_end, new_addr);
+		next = (old_addr + PMD_SIZE) & PMD_MASK;
+		/* even if next overflowed, extent below will be ok */
+		extent = next - old_addr;
+		if (extent > old_end - old_addr)
+			extent = old_end - old_addr;
+		next = (new_addr + PMD_SIZE) & PMD_MASK;
+		if (extent > next - new_addr)
+			extent = next - new_addr;
 		old_pmd = get_old_pmd(vma->vm_mm, old_addr);
 		if (!old_pmd)
 			continue;
