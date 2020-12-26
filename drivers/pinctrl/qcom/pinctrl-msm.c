@@ -85,14 +85,23 @@ static struct msm_pinctrl *msm_pinctrl_data;
 static u32 msm_readl_##name(struct msm_pinctrl *pctrl, \
 			    const struct msm_pingroup *g) \
 { \
-	return readl(pctrl->regs[g->tile] + g->name##_reg); \
+	return readl_relaxed(pctrl->regs[g->tile] + g->name##_reg); \
 } \
 static void msm_writel_##name(u32 val, struct msm_pinctrl *pctrl, \
 			      const struct msm_pingroup *g) \
 { \
+	writel_relaxed(val, pctrl->regs[g->tile] + g->name##_reg); \
+} \
+static u32 msm_readl_strict_##name(struct msm_pinctrl *pctrl, \
+			    const struct msm_pingroup *g) \
+{ \
+	return readl(pctrl->regs[g->tile] + g->name##_reg); \
+} \
+static void msm_writel_strict_##name(u32 val, struct msm_pinctrl *pctrl, \
+			      const struct msm_pingroup *g) \
+{ \
 	writel(val, pctrl->regs[g->tile] + g->name##_reg); \
 }
-
 MSM_ACCESSOR(ctl)
 MSM_ACCESSOR(io)
 MSM_ACCESSOR(intr_cfg)
@@ -521,7 +530,7 @@ static int msm_gpio_get_direction(struct gpio_chip *chip, unsigned int offset)
 
 	g = &pctrl->soc->groups[offset];
 
-	val = msm_readl_ctl(pctrl, g);
+	val = msm_readl_strict_ctl(pctrl, g);
 
 	/* 0 = output, 1 = input */
 	return val & BIT(g->oe_bit) ? 0 : 1;
@@ -535,7 +544,7 @@ static int msm_gpio_get(struct gpio_chip *chip, unsigned offset)
 
 	g = &pctrl->soc->groups[offset];
 
-	val = msm_readl_io(pctrl, g);
+	val = msm_readl_strict_io(pctrl, g);
 	return !!(val & BIT(g->in_bit));
 }
 
@@ -555,7 +564,7 @@ static void msm_gpio_set(struct gpio_chip *chip, unsigned offset, int value)
 		val |= BIT(g->out_bit);
 	else
 		val &= ~BIT(g->out_bit);
-	msm_writel_io(val, pctrl, g);
+	msm_writel_strict_io(val, pctrl, g);
 
 	raw_spin_unlock_irqrestore(&pctrl->lock, flags);
 }
