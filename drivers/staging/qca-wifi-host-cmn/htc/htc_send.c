@@ -1608,6 +1608,7 @@ static enum HTC_SEND_QUEUE_RESULT htc_try_send(HTC_TARGET *target,
 				} else {
 					pEndpoint->total_num_requeues++;
 					pEndpoint->num_requeues_warn = 0;
+					break;
 				}
 			default:
 				QDF_TRACE(QDF_MODULE_ID_HIF, QDF_TRACE_LEVEL_INFO,
