@@ -157,3 +157,7 @@ arch/*/configs/vendor/*_defconfig
 generate_defconfig.txt
 arch/arm64/configs/vendor/lahaina_ALLYES_GKI.config.backup
 
+# Personal
+/build
+/out
+build.sh
