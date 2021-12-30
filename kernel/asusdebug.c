@@ -233,6 +233,7 @@ struct stackframe {
 int unwind_frame(struct stackframe *frame);
 void notrace walk_stackframe(struct stackframe *frame, int (*fn)(struct stackframe *, void *), void *data);
 
+#ifdef CONFIG_DEBUG_KERNEL
 void show_stack1(struct task_struct *p1, void *p2)
 {
 	struct stack_trace trace;
@@ -255,7 +256,11 @@ void show_stack1(struct task_struct *p1, void *p2)
 			save_log("%pS\n", (void *)entries[i]);
 	kfree(entries);
 }
-
+#else
+inline void show_stack1(struct task_struct *p1, void *p2)
+{
+}
+#endif
 
 #define SPLIT_NS(x) nsec_high(x), nsec_low(x)
 void print_all_thread_info(void)
