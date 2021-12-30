@@ -65,14 +65,6 @@ endif
 endif
 
 all:
-	$(shell rm -fr $(shell pwd)/soc/core.h)
-	$(shell ln -s $(KERNEL_SRC)/drivers/pinctrl/core.h $(shell pwd)/soc/core.h)
-	$(shell rm -fr $(shell pwd)/include/soc/internal.h)
-	$(shell ln -s $(KERNEL_SRC)/drivers/base/regmap/internal.h $(shell pwd)/include/soc/internal.h)
-	$(shell rm -fr $(shell pwd)/soc/pinctrl-utils.h)
-	$(shell ln -s $(KERNEL_SRC)/drivers/pinctrl/pinctrl-utils.h $(shell pwd)/soc/pinctrl-utils.h)
-	$(shell rm -fr $(shell pwd)/include/soc/qcom/secure_buffer.h)
-	$(shell ln -s $(KERNEL_SRC)/include/soc/qcom/secure_buffer.h $(shell pwd)/include/soc/qcom/secure_buffer.h)
 	$(shell mkdir -p $(shell pwd)/linux)
 	$(shell mkdir -p $(shell pwd)/sound)
 	$(shell mkdir -p $(shell pwd)/linux/mfd)
