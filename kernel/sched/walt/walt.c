@@ -4336,12 +4336,9 @@ unlock:
 	return ret;
 }
 
-void sched_set_refresh_rate_walt(void)
+void sched_set_refresh_rate_walt(int refresh_rate)
 {
 	if (HZ == 250 && sysctl_sched_dynamic_ravg_window_enable) {
-
-		unsigned int refresh_rate = dsi_panel_get_refresh_rate();
-
 		if (refresh_rate == 60)
 		{
 			pr_err("[WALT] set 60fps WALT RAVG_Window\n");

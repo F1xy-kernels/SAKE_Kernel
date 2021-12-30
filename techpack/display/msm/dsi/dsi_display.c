@@ -7671,21 +7671,14 @@ int dsi_display_set_mode(struct dsi_display *display,
 	WRITE_ONCE(cur_refresh_rate, mode->timing.refresh_rate);
 	switch_fps = mode->timing.refresh_rate;
 
-	if (switch_fps == 60)
-		{
+	if (switch_fps == 60) {
 		pr_err("[WALT-Disp] set 60fps WALT RAVG_Window\n");
-		sched_set_refresh_rate_walt();
-		}
-	else if (switch_fps == 90)
-		{
+	} else if (switch_fps == 90) {
 		pr_err("[WALT-Disp] set 90fps WALT RAVG_Window\n");
-		sched_set_refresh_rate_walt();
-		}
-	else if (switch_fps == 120)
-		{
+	} else if (switch_fps == 120) {
 		pr_err("[WALT-Disp] set 120fps WALT RAVG_Window\n");
-		sched_set_refresh_rate_walt();
-		}
+	}
+	sched_set_refresh_rate_walt(switch_fps);
 
 	DSI_LOG("resolution=%d*%d, fps=%d\n",
 			timing.v_active, timing.h_active,
