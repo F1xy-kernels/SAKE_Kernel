@@ -183,12 +183,12 @@ zinstall install:
 %.dtb: scripts
 	$(Q)$(MAKE) $(build)=$(boot)/dts $(boot)/dts/$@
 
-PHONY += dtbs dtbs_install
+PHONY += dtbs_qom dtbs_install_qcom
 
-dtbs: prepare scripts
+dtbs_qom: prepare scripts
 	$(Q)$(MAKE) $(build)=$(boot)/dts
 
-dtbs_install:
+dtbs_install_qcom:
 	$(Q)$(MAKE) $(dtbinst)=$(boot)/dts
 
 Image-dtb: vmlinux scripts dtbs
