@@ -604,8 +604,8 @@ F2FS_FEATURE_RO_ATTR(sb_checksum, FEAT_SB_CHECKSUM);
 #ifdef CONFIG_UNICODE
 F2FS_FEATURE_RO_ATTR(casefold, FEAT_CASEFOLD);
 #ifdef CONFIG_F2FS_FS_COMPRESSION
-#endif
 F2FS_FEATURE_RO_ATTR(compression, FEAT_COMPRESSION);
+#endif
 #endif
 
 #define ATTR_LIST(name) (&f2fs_attr_##name.attr)

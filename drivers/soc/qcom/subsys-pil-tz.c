@@ -1434,7 +1434,8 @@ static int antenna_switch_disable_vreg()
 
 	return ret;
 }
-static int subsys_setAntennaSwitch(int enable)
+
+int subsys_setAntennaSwitch(int enable)
 {
 	int ret = 0;
 
