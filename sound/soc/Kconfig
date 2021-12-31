@@ -42,7 +42,7 @@ config SND_SOC_ACPI
 
 config AUDIO_QGKI
 	bool "Audio QGKI support"
-	depends on QGKI
+	# depends on QGKI
 
 # All the supported SoCs
 source "sound/soc/adi/Kconfig"

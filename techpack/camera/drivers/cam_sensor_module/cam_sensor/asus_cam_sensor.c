@@ -1245,7 +1245,7 @@ static void compareCameraSN (uint8_t moduleGroupIndex)
 	}
 
 
-	sscanf(buf_cali_id, "%24s", buf_cali_id_tmp);
+	sscanf(buf_cali_id, "%24s", buf_cali_id_tmp + 1);
 	pr_info("[DIT_EEPROM]  buf_cali_id %s", buf_cali_id_tmp);
 
 

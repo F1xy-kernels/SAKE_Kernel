@@ -37,7 +37,7 @@
 
 #define OTP_DATA_LEN_WORD (32)
 #define OTP_DATA_LEN_BYTE (OTP_DATA_LEN_WORD*2)
-#define OTP_ID_LEN (12)
+#define OTP_ID_LEN (25)
 
 #define PROC_OTP_Camera0     "driver/otp0"
 #define PROC_OTP_Camera1     "driver/otp1"

@@ -5022,7 +5022,7 @@ static int msm_pcie_check_l1ss_support(struct pci_dev *pdev, void *dev)
 static int msm_pcie_config_common_clock_enable(struct pci_dev *pdev,
 							void *dev)
 {
-	struct msm_pcie_dev_t *pcie_dev = (struct msm_pcie_dev_t *)dev;
+	struct msm_pcie_dev_t *pcie_dev __maybe_unused = (struct msm_pcie_dev_t *)dev;
 
 	PCIE_DBG(pcie_dev, "PCIe: RC%d: PCI device %02x:%02x.%01x\n",
 		pcie_dev->rc_idx, pdev->bus->number, PCI_SLOT(pdev->devfn),
@@ -5044,7 +5044,7 @@ static void msm_pcie_config_common_clock_enable_all(struct msm_pcie_dev_t *dev)
 static int msm_pcie_config_clock_power_management_enable(struct pci_dev *pdev,
 							void *dev)
 {
-	struct msm_pcie_dev_t *pcie_dev = (struct msm_pcie_dev_t *)dev;
+	struct msm_pcie_dev_t *pcie_dev __maybe_unused = (struct msm_pcie_dev_t *)dev;
 	u32 val;
 
 	/* enable only for upstream ports */

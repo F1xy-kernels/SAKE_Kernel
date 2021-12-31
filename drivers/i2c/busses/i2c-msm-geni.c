@@ -1405,7 +1405,7 @@ static int geni_i2c_remove(struct platform_device *pdev)
 
 static int geni_i2c_resume_early(struct device *device)
 {
-	struct geni_i2c_dev *gi2c = dev_get_drvdata(device);
+	struct geni_i2c_dev *gi2c __maybe_unused = dev_get_drvdata(device);
 
 	GENI_SE_DBG(gi2c->ipcl, false, gi2c->dev, "%s\n", __func__);
 	return 0;
