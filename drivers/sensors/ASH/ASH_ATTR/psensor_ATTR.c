@@ -884,7 +884,7 @@ static struct device_attribute proximity_property_attrs[] = {
 #ifdef CONFIG_TMD2755_FLAG
 	__ATTR(chip_cal_en, 0220, NULL, ATT_proximity_store_chip_cal_en),
 #endif
-	__ATTR(pocket_en, 0664, NULL, ATT_proximity_store_pocket_en),
+	__ATTR(pocket_en, 0444, NULL, ATT_proximity_store_pocket_en),
 };
 
 int psensor_ATTR_register(psensor_ATTR *mATTR)
