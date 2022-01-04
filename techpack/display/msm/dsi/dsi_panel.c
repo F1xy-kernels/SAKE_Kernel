@@ -2750,7 +2750,12 @@ static int dsi_panel_parse_dsc_params(struct dsi_display_mode *mode,
 		DSI_ERR("invalid dsc slice-per-pkt:%d\n", data);
 		goto error;
 	}
+
+#if 0
 	priv_info->dsc.slice_per_pkt = data;
+#else
+	priv_info->dsc.slice_per_pkt = 2;
+#endif
 
 	rc = utils->read_u32(utils->data, "qcom,mdss-dsc-bit-per-component",
 		&data);
