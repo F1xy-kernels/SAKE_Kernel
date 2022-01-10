@@ -4626,7 +4626,8 @@ static long kgsl_run_one_worker(struct kthread_worker *worker,
 {
 	kthread_init_worker(worker);
 	if (perf)
-		*thread = kthread_run_perf_critical(kthread_worker_fn, worker, name);
+		*thread = kthread_run_perf_critical(cpu_prime_mask,
+			kthread_worker_fn, worker, name);
 	else
 		*thread = kthread_run(kthread_worker_fn, worker, name);
 	if (IS_ERR(*thread)) {
@@ -4726,10 +4727,10 @@ int __init kgsl_core_init(void)
 
 	if (IS_ERR_VALUE(kgsl_run_one_worker(&kgsl_driver.worker,
 			&kgsl_driver.worker_thread,
-			"kgsl_worker_thread")) ||
+			"kgsl_worker_thread", true)) ||
 		IS_ERR_VALUE(kgsl_run_one_worker(&kgsl_driver.low_prio_worker,
 			&kgsl_driver.low_prio_worker_thread,
-			"kgsl_low_prio_worker_thread")))
+			"kgsl_low_prio_worker_thread", false)))
 		goto err;
 
 	sched_setscheduler(kgsl_driver.worker_thread, SCHED_FIFO, &param);
