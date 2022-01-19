@@ -430,6 +430,59 @@ static struct cpufreq_driver cpufreq_qcom_hw_driver = {
 	.resume		= qcom_cpufreq_hw_resume,
 };
 
+struct cpufreq_pair {
+	int cpu;
+	int freq;
+};
+
+#ifdef CONFIG_ARM_QCOM_CPUFREQ_HW_TABLE_EDIT
+static struct cpufreq_pair preset_pairs[] = {
+	/* Little cluster */
+	{ 0, 1209600 },
+	{ 0, 1612800 },
+	{ 0, 1804800 },
+	/* Big cluster */
+	{ 4, 1075200 },
+	{ 4, 1670400 },
+	{ 4, 1996800 },
+	/* Prime core */
+	{ 7, 1075200 },
+	{ 7, 1670400 },
+	{ 7, 1900800 },
+	{ 7, 2265600 },
+};
+
+static void invalidate_freqs(int cpu, int entries, struct cpufreq_frequency_table *table)
+{
+	int i = 0, a = 0;
+
+	for (i = 0; i < ARRAY_SIZE(preset_pairs); i++) {
+		struct cpufreq_pair target_pair = preset_pairs[i];
+		if (cpu == target_pair.cpu)
+			target_pair = preset_pairs[i];
+		else continue;
+
+		for (a = 0; a < entries; a++) {
+			target_pair = preset_pairs[i];
+			/* Invalid(ated) freqs */
+			if (table[a].frequency < 1)
+				return;
+			/*
+			 * Second check is for cases when we're cutting freqs
+			 * above highest defined in efficient array.
+			 */
+			if (table[a].frequency != target_pair.freq || i >= ARRAY_SIZE(preset_pairs)) {
+				pr_info("removing freq %i", table[a].frequency);
+				table[a].frequency = CPUFREQ_ENTRY_INVALID;
+			} else {
+				pr_info("leaving freq %i", table[a].frequency);
+				i++;
+			}
+		}
+	}
+}
+#endif
+
 static int qcom_cpufreq_hw_read_lut(struct platform_device *pdev,
 				    struct cpufreq_qcom *c, u32 max_cores)
 {
@@ -464,7 +517,7 @@ static int qcom_cpufreq_hw_read_lut(struct platform_device *pdev,
 			freq = cpu_hw_rate / 1000;
 
 		c->table[i].frequency = freq;
-		dev_dbg(dev, "index=%d freq=%d, core_count %d\n",
+		dev_info(dev, "index=%d freq=%d, core_count %d\n",
 				i, c->table[i].frequency, core_count);
 
 		if (core_count != max_cores)
@@ -483,6 +536,10 @@ static int qcom_cpufreq_hw_read_lut(struct platform_device *pdev,
 		if (cpu_dev)
 			dev_pm_opp_add(cpu_dev, freq * 1000, volt);
 	}
+
+#ifdef CONFIG_ARM_QCOM_CPUFREQ_HW_TABLE_EDIT
+	invalidate_freqs(cpu, lut_max_entries, c->table);
+#endif
 
 	c->table[i].frequency = CPUFREQ_TABLE_END;
 
