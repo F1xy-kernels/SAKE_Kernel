@@ -354,3 +354,9 @@ config CPU_FREQ_MSM
 	depends on CPU_FREQ
 	help
 	  This enables the CPUFreq driver for Qualcomm Technologies, Inc. CPUs.
+
+config ARM_QCOM_CPUFREQ_HW_TABLE_EDIT
+	bool "Addon to adjust cpufreq tables"
+	depends on ARM_QCOM_CPUFREQ_HW
+	help
+	  Support for editing cpufreq tables when dtb editing isn't available.
