@@ -1535,8 +1535,6 @@ static int fb_notifier_callback(struct notifier_block *self,
 }
 #elif defined(CONFIG_DRM)
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0))
-static struct drm_panel *active_panel;
-
 static int drm_check_dt(struct device_node *np)
 {
     int i = 0;

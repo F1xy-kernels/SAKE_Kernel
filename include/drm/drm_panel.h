@@ -202,6 +202,7 @@ int drm_panel_get_modes(struct drm_panel *panel);
 
 #if defined(CONFIG_OF) && defined(CONFIG_DRM_PANEL)
 struct drm_panel *of_drm_find_panel(const struct device_node *np);
+static struct drm_panel *active_panel;
 #else
 static inline struct drm_panel *of_drm_find_panel(const struct device_node *np)
 {

@@ -128,7 +128,6 @@ static int synaptics_rmi4_reset_device(struct synaptics_rmi4_data *rmi4_data,
 		bool rebuild);
 static int synaptics_rmi4_dsi_panel_notifier_cb(struct notifier_block *self,
 		unsigned long event, void *data);
-struct drm_panel *active_panel;
 #ifdef CONFIG_HAS_EARLYSUSPEND
 #ifndef CONFIG_FB
 #define USE_EARLYSUSPEND
