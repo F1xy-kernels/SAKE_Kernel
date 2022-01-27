@@ -1390,8 +1390,6 @@ static int fts_mode_handler(struct fts_ts_info *info, int force);
 static int fts_command(struct fts_ts_info *info, unsigned char cmd);
 static int fts_chip_initialization(struct fts_ts_info *info);
 
-static struct drm_panel *active_panel;
-
 void touch_callback(unsigned int status)
 {
 	/* Empty */
