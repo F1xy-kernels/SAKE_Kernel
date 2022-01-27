@@ -135,8 +135,6 @@ enum exp_fn {
 	RMI_LAST,
 };
 
-extern struct drm_panel *active_panel;
-
 /*
  * struct synaptics_rmi4_fn_desc - function descriptor fields in PDT entry
  * @query_base_addr: base address for query registers
