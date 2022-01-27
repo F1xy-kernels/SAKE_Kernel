@@ -446,6 +446,7 @@ static struct cpufreq_pair preset_pairs[] = {
 	{ 4, 1670400 },
 	{ 4, 1996800 },
 	/* Prime core */
+	{ 7, 844800 },
 	{ 7, 1075200 },
 	{ 7, 1670400 },
 	{ 7, 1900800 },
