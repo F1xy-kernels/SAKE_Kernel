@@ -10,7 +10,7 @@
 #include <linux/kthread.h>
 #include <linux/slab.h>
 #include <uapi/linux/sched/types.h>
-#include <drm/drm_notifier_mi.h>
+#include <drm/drm_panel.h>
 
 enum {
 	SCREEN_ON,
@@ -51,6 +51,8 @@ static void devfreq_max_unboost(struct work_struct *work);
 static struct df_boost_drv df_boost_drv_g __read_mostly = {
 	BOOST_DEV_INIT(df_boost_drv_g, DEVFREQ_CPU_LLCC_DDR_BW,
 		       CONFIG_DEVFREQ_CPU_LLCC_DDR_BW_BOOST_FREQ)
+	BOOST_DEV_INIT(df_boost_drv_g, DEVFREQ_CPU_CPU_LLCC_BW,
+		       CONFIG_DEVFREQ_CPU_CPU_LLCC_BW_BOOST_FREQ)
 };
 
 static void __devfreq_boost_kick(struct boost_dev *b)
@@ -189,10 +191,11 @@ static int msm_drm_notifier_cb(struct notifier_block *nb,
 			       unsigned long action, void *data)
 {
 	struct df_boost_drv *d = container_of(nb, typeof(*d), msm_drm_notif);
-	int i, *blank = ((struct mi_drm_notifier *)data)->data;
+	struct drm_panel_notifier *evdata = data;
+	int i, *blank = evdata->data;
 
 	/* Parse DRM blank events as soon as they occur */
-	if (action != MSM_DRM_EARLY_EVENT_BLANK)
+	if (action != DRM_PANEL_EARLY_EVENT_BLANK)
 		return NOTIFY_OK;
 
 	/* Boost when the screen turns on and unboost when it turns off */
@@ -325,7 +328,10 @@ static int __init devfreq_boost_init(void)
 
 	d->msm_drm_notif.notifier_call = msm_drm_notifier_cb;
 	d->msm_drm_notif.priority = INT_MAX;
-	ret = msm_drm_register_client(&d->msm_drm_notif);
+	if (!active_panel) {
+		return -EPROBE_DEFER;
+	}
+	ret = drm_panel_notifier_register(active_panel, &d->msm_drm_notif);
 	if (ret) {
 		pr_err("Unable to register msm_drm notifier: %d\n", ret);
 		goto unregister_handler;
