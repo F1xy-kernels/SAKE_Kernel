@@ -624,6 +624,14 @@ void bfq_bfqq_move(struct bfq_data *bfqd, struct bfq_queue *bfqq,
 		   struct bfq_group *bfqg)
 {
 	struct bfq_entity *entity = &bfqq->entity;
+	struct bfq_group *old_parent = bfqq_group(bfqq);
+
+	/*
+	 * No point to move bfqq to the same group, which can happen when
+	 * root group is offlined
+	 */
+	if (old_parent == bfqg)
+		return;
 
 	/*
 	 * oom_bfqq is not allowed to move, oom_bfqq will hold ref to root_group
@@ -651,7 +659,7 @@ void bfq_bfqq_move(struct bfq_data *bfqd, struct bfq_queue *bfqq,
 		bfq_deactivate_bfqq(bfqd, bfqq, false, false);
 	else if (entity->on_st)
 		bfq_put_idle_entity(bfq_entity_service_tree(entity), entity);
-	bfqg_and_blkg_put(bfqq_group(bfqq));
+	bfqg_and_blkg_put(old_parent);
 
 	entity->parent = bfqg->my_entity;
 	entity->sched_data = &bfqg->sched_data;
