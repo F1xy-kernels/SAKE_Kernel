@@ -456,29 +456,40 @@ static struct cpufreq_pair preset_pairs[] = {
 static void invalidate_freqs(int cpu, int entries, struct cpufreq_frequency_table *table)
 {
 	int i = 0, a = 0;
+	u32 prev_freq = 0;
 
 	for (i = 0; i < ARRAY_SIZE(preset_pairs); i++) {
 		struct cpufreq_pair target_pair = preset_pairs[i];
-		if (cpu == target_pair.cpu)
-			target_pair = preset_pairs[i];
-		else continue;
+		if (cpu != target_pair.cpu)
+			continue;
 
 		for (a = 0; a < entries; a++) {
+			u32 eval_freq = table[a].frequency;
 			target_pair = preset_pairs[i];
 			/* Invalid(ated) freqs */
-			if (table[a].frequency < 1)
-				return;
+			if (eval_freq < 1)
+				continue;
+
+			/* End of table, nothing to do */
+			if (prev_freq == eval_freq)
+				break;
+
 			/*
 			 * Second check is for cases when we're cutting freqs
 			 * above highest defined in efficient array.
 			 */
-			if (table[a].frequency != target_pair.freq || i >= ARRAY_SIZE(preset_pairs)) {
-				pr_info("removing freq %i", table[a].frequency);
+			if (eval_freq != target_pair.freq || i >= ARRAY_SIZE(preset_pairs)) {
+				struct device *cpu_dev = get_cpu_device(cpu);
+				pr_info("removing freq %i", eval_freq);
+				if (cpu_dev)
+					dev_pm_opp_remove(cpu_dev, eval_freq * 1000);
+
 				table[a].frequency = CPUFREQ_ENTRY_INVALID;
 			} else {
-				pr_info("leaving freq %i", table[a].frequency);
+				pr_info("leaving freq %i", eval_freq);
 				i++;
 			}
+			prev_freq = eval_freq;
 		}
 	}
 }
