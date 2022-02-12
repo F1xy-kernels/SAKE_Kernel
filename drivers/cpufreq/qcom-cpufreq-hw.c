@@ -445,12 +445,14 @@ static struct cpufreq_pair preset_pairs[] = {
 	{ 4, 1075200 },
 	{ 4, 1670400 },
 	{ 4, 1996800 },
+	{ 4, 2419200 },
 	/* Prime core */
 	{ 7, 844800 },
 	{ 7, 1075200 },
 	{ 7, 1670400 },
 	{ 7, 1900800 },
 	{ 7, 2265600 },
+	{ 7, 2841600 },
 };
 
 static void invalidate_freqs(int cpu, int entries, struct cpufreq_frequency_table *table)
