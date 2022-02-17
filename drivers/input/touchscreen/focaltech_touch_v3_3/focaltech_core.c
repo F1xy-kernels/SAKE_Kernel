@@ -1576,6 +1576,7 @@ static int fts_parse_dt(struct device *dev, struct fts_ts_platform_data *pdata)
 }
 
 #if defined(CONFIG_DRM) && defined(CONFIG_DRM_PANEL)
+static struct drm_panel *active_panel;
 
 static int fts_ts_check_dt(struct device_node *np)
 {
