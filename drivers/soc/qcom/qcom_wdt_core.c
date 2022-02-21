@@ -50,8 +50,8 @@ static void qcom_wdt_dump_cpu_alive_mask(struct msm_watchdog_data *wdog_dd)
 {
 	static char alive_mask_buf[MASK_SIZE];
 
-	scnprintf(alive_mask_buf, MASK_SIZE, "%x", atomic_read(
-				&wdog_dd->alive_mask));
+	scnprintf(alive_mask_buf, MASK_SIZE, "%x",
+		  atomic_read(&wdog_dd->alive_mask));
 	dev_info(wdog_dd->dev, "cpu alive mask from last pet %s\n",
 				alive_mask_buf);
 }
@@ -658,7 +658,7 @@ static void qcom_wdt_ping_other_cpus(struct msm_watchdog_data *wdog_dd)
 	 * disabled (which is what smp_call_function_single() does in
 	 * synchronous mode).
 	 */
-	preempt_disable();
+	migrate_disable();
 	this_cpu = raw_smp_processor_id();
 	atomic_set(&wdog_dd->alive_mask, BIT(this_cpu));
 	online_mask = *cpumask_bits(cpu_online_mask) & ~BIT(this_cpu);
@@ -672,7 +672,7 @@ static void qcom_wdt_ping_other_cpus(struct msm_watchdog_data *wdog_dd)
 				    qcom_wdt_keep_alive_response,
 				    (void *)(BIT(cpu + 32) | final_alive_mask));
 	}
-	preempt_enable();
+	migrate_enable();
 
 	atomic_set(&wdog_dd->pinged_mask, final_alive_mask);
 	while (1) {
@@ -717,7 +717,6 @@ static __ref int qcom_wdt_kthread(void *arg)
 		} while (ret != 0);
 
 		wdog_dd->thread_start = sched_clock();
-
 		if (wdog_dd->do_ipi_ping)
 			qcom_wdt_ping_other_cpus(wdog_dd);
 
