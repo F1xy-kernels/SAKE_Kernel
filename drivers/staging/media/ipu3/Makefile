@@ -13,6 +13,6 @@ obj-$(CONFIG_VIDEO_IPU3_IMGU) += ipu3-imgu.o
 
 # HACK! While this driver is in bad shape, don't enable several warnings
 #       that would be otherwise enabled with W=1
-ccflags-y += $(call cc-disable-warning, packed-not-aligned)
+#ccflags-y += $(call cc-disable-warning, packed-not-aligned)
 ccflags-y += $(call cc-disable-warning, type-limits)
 ccflags-y += $(call cc-disable-warning, unused-const-variable)

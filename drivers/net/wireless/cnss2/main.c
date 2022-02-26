@@ -14,6 +14,7 @@
 #if IS_ENABLED(CONFIG_QCOM_MINIDUMP)
 #include <soc/qcom/minidump.h>
 #endif
+#include <soc/qcom/memory_dump.h>
 
 #include "main.h"
 #include "bus.h"
