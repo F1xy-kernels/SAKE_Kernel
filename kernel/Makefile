@@ -135,9 +135,6 @@ filechk_cat = cat $<
 
 $(obj)/config_data: $(KCONFIG_CONFIG) FORCE
 	$(call filechk,cat)
-	echo "CONFIG_SHADOW_CALL_STACK=y" >> $@
-	echo "CONFIG_LTO_CLANG=y" >> $@
-	echo "CONFIG_CFI_CLANG=y" >> $@
 	echo "CONFIG_MEMCG=y" >> $@
 	echo "CONFIG_MEMCG_SWAP=y" >> $@
 	echo "CONFIG_PSI=y" >> $@
