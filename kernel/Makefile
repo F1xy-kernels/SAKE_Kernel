@@ -138,6 +138,12 @@ $(obj)/config_data: $(KCONFIG_CONFIG) FORCE
 	echo "CONFIG_MEMCG=y" >> $@
 	echo "CONFIG_MEMCG_SWAP=y" >> $@
 	echo "CONFIG_PSI=y" >> $@
+	echo "CONFIG_PROFILING=y" >> $@
+	echo "CONFIG_SCHED_DEBUG=y" >> $@
+	echo "CONFIG_STATIC_USERMODEHELPER=y" >> $@
+	echo "CONFIG_UID_SYS_STATS=y" >> $@
+	echo "CONFIG_ARM64_SW_TTBR0_PAN=y" >> $@
+	echo "CONFIG_HARDENED_USERCOPY=y" >> $@
 
 $(obj)/kheaders.o: $(obj)/kheaders_data.tar.xz
 
