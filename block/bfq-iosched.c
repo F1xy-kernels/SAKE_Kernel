@@ -2612,6 +2612,56 @@ bfq_setup_cooperator(struct bfq_data *bfqd, struct bfq_queue *bfqq,
 		return bfqq->new_bfqq;
 
 	/*
+	 * Check delayed stable merge for rotational or non-queueing
+	 * devs. For this branch to be executed, bfqq must not be
+	 * currently merged with some other queue (i.e., bfqq->bic
+	 * must be non null). If we considered also merged queues,
+	 * then we should also check whether bfqq has already been
+	 * merged with bic->stable_merge_bfqq. But this would be
+	 * costly and complicated.
+	 */
+	if (unlikely(!bfqd->nonrot_with_queueing)) {
+		/*
+		 * Make sure also that bfqq is sync, because
+		 * bic->stable_merge_bfqq may point to some queue (for
+		 * stable merging) also if bic is associated with a
+		 * sync queue, but this bfqq is async
+		 */
+		if (bfq_bfqq_sync(bfqq) && bic->stable_merge_bfqq &&
+		    !bfq_bfqq_just_created(bfqq) &&
+		    time_is_before_jiffies(bfqq->split_time +
+					  msecs_to_jiffies(bfq_late_stable_merging)) &&
+		    time_is_before_jiffies(bfqq->creation_time +
+					   msecs_to_jiffies(bfq_late_stable_merging))) {
+			struct bfq_queue *stable_merge_bfqq =
+				bic->stable_merge_bfqq;
+			int proc_ref = min(bfqq_process_refs(bfqq),
+					   bfqq_process_refs(stable_merge_bfqq));
+
+			/* deschedule stable merge, because done or aborted here */
+			bfq_put_stable_ref(stable_merge_bfqq);
+
+			bic->stable_merge_bfqq = NULL;
+
+			if (!idling_boosts_thr_without_issues(bfqd, bfqq) &&
+			    proc_ref > 0) {
+				/* next function will take at least one ref */
+				struct bfq_queue *new_bfqq =
+					bfq_setup_merge(bfqq, stable_merge_bfqq);
+
+				if (new_bfqq) {
+					bic->stably_merged = true;
+					if (new_bfqq->bic)
+						new_bfqq->bic->stably_merged =
+									true;
+				}
+				return new_bfqq;
+			} else
+				return NULL;
+		}
+	}
+
+	/*
 	 * Do not perform queue merging if the device is non
 	 * rotational and performs internal queueing. In fact, such a
 	 * device reaches a high speed through internal parallelism
