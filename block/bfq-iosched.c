@@ -362,7 +362,17 @@ static int ref_wr_duration[2];
  */
 static const unsigned long max_service_from_wr = 120000;
 
-#define RQ_BIC(rq)		icq_to_bic((rq)->elv.priv[0])
+/*
+ * Maximum time between the creation of two queues, for stable merge
+ * to be activated (in ms)
+ */
+static const unsigned long bfq_activation_stable_merging = 600;
+/*
+ * Minimum time to be waited before evaluating delayed stable merge (in ms)
+ */
+static const unsigned long bfq_late_stable_merging = 600;
+
+#define RQ_BIC(rq)		((struct bfq_io_cq *)((rq)->elv.priv[0]))
 #define RQ_BFQQ(rq)		((rq)->elv.priv[1])
 
 struct bfq_queue *bic_to_bfqq(struct bfq_io_cq *bic, bool is_sync)
