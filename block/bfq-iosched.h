@@ -433,6 +433,17 @@ struct bfq_io_cq {
 	unsigned long saved_wr_start_at_switch_to_srt;
 	unsigned int saved_wr_cur_max_time;
 	struct bfq_ttime saved_ttime;
+
+	/* Save also injection state */
+	u64 saved_last_serv_time_ns;
+	unsigned int saved_inject_limit;
+	unsigned long saved_decrease_time_jif;
+
+	/* candidate queue for a stable merge (due to close creation time) */
+	struct bfq_queue *stable_merge_bfqq;
+
+	bool stably_merged;	/* non splittable if true */
+	unsigned int requests;	/* Number of requests this process has in flight */
 };
 
 /**
