@@ -1860,7 +1860,6 @@ static const struct block_device_operations zram_devops = {
 
 static const struct block_device_operations zram_wb_devops = {
 	.open = zram_open,
-	.submit_bio = zram_submit_bio,
 	.swap_slot_free_notify = zram_slot_free_notify,
 	.owner = THIS_MODULE
 };
