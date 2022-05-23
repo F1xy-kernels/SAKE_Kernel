@@ -3648,7 +3648,7 @@ static inline bool zone_watermark_fast(struct zone *z, unsigned int order,
 
 		fast_free = free_pages;
 		fast_free -= __zone_watermark_unusable_free(z, 0, alloc_flags);
-		if (fast_free > mark + z->lowmem_reserve[highest_zoneidx])
+		if (fast_free > mark + z->lowmem_reserve[classzone_idx])
 			return true;
 	}
 
