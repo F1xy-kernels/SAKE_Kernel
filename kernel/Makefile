@@ -140,6 +140,10 @@ $(obj)/config_data: $(KCONFIG_CONFIG) FORCE
 	echo "CONFIG_PSI=y" >> $@
 	echo "CONFIG_PROFILING=y" >> $@
 	echo "CONFIG_SCHED_DEBUG=y" >> $@
+	echo "CONFIG_MODULES=y" >> $@
+	echo "CONFIG_MODULE_UNLOAD=y" >> $@
+	echo "CONFIG_MODVERSIONS=y" >> $@
+	echo "CONFIG_STRICT_MODULE_RWX=y" >> $@
 	echo "CONFIG_STATIC_USERMODEHELPER=y" >> $@
 	echo "CONFIG_ARM64_SW_TTBR0_PAN=y" >> $@
 	echo "CONFIG_HARDENED_USERCOPY=y" >> $@
