@@ -72,22 +72,7 @@ static void restore_cgroup_boost_settings(void) { }
  */
 static void set_boost_policy(int type)
 {
-	if (type == NO_BOOST || type == RESTRAINED_BOOST) {
-		boost_policy = SCHED_BOOST_NONE;
-		return;
-	}
-
-	if (boost_policy_dt) {
-		boost_policy = boost_policy_dt;
-		return;
-	}
-
-	if (hmp_capable()) {
-		boost_policy = SCHED_BOOST_ON_BIG;
-		return;
-	}
-
-	boost_policy = SCHED_BOOST_ON_ALL;
+	boost_policy = SCHED_BOOST_NONE;
 }
 
 static bool verify_boost_params(int type)
@@ -244,6 +229,8 @@ static void sched_boost_disable_all(void)
 
 static void _sched_set_boost(int type)
 {
+	return;
+
 	if (type == 0)
 		sched_boost_disable_all();
 	else if (type > 0)
