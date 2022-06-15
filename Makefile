@@ -750,6 +750,10 @@ else ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS += -Os
 endif
 
+# Optimise kernel binary for 888's CPU
+KBUILD_CFLAGS  += -mcpu=cortex-a55
+KBUILD_AFLAGS  += -mcpu=cortex-a55
+
 # Tell gcc to never replace conditional load with a non-conditional one
 KBUILD_CFLAGS	+= $(call cc-option,--param=allow-store-data-races=0)
 KBUILD_CFLAGS	+= $(call cc-option,-fno-allow-store-data-races)
@@ -980,6 +984,9 @@ KBUILD_CFLAGS	+= $(call cc-option,-fno-merge-all-constants)
 # for gcc -fno-merge-all-constants disables everything, but it is fine
 # to have actual conforming behavior enabled.
 #KBUILD_CFLAGS	+= $(call cc-option,-fmerge-constants)
+
+# for clang, let's remove all unknown warnings.
+KBUILD_CFLAGS += $(call cc-option,-Wno-unknown-warning-option)
 
 # Make sure -fstack-check isn't enabled (like gentoo apparently did)
 KBUILD_CFLAGS  += $(call cc-option,-fno-stack-check,)
