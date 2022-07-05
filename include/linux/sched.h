@@ -531,6 +531,21 @@ static inline int sched_unisolate_cpu_unlocked(int cpu)
 	return 0;
 }
 
+
+#ifdef CONFIG_QCOM_HYP_CORE_CTL
+extern int hh_vcpu_populate_affinity_info(u32 cpu_index, u64 cap_id);
+extern int hh_vpm_grp_populate_info(u64 cap_id, int virq_num);
+#else
+static inline int hh_vcpu_populate_affinity_info(u32 cpu_index, u64 cap_id)
+{
+	return 0;
+}
+static inline int  hh_vpm_grp_populate_info(u64 cap_id, int virq_num)
+{
+	return 0;
+}
+#endif /* CONFIG_QCOM_HYP_CORE_CTL */
+
 struct sched_rt_entity {
 	struct list_head		run_list;
 	unsigned long			timeout;
