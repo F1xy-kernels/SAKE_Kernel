@@ -534,6 +534,10 @@
 				qcom,mdss-dsc-bit-per-component = <8>;
 				qcom,mdss-dsc-bit-per-pixel = <8>;
 				qcom,mdss-dsc-block-prediction-enable;
+
+				/* partial update? */
+				qcom,partial-update-enabled = "single_roi";
+				qcom,panel-roi-alignment = <720 8 8 8 1440 8>;
 			};
 
 			timing@1{
@@ -746,6 +750,10 @@
 				qcom,mdss-dsc-bit-per-component = <8>;
 				qcom,mdss-dsc-bit-per-pixel = <8>;
 				qcom,mdss-dsc-block-prediction-enable;
+
+				/* partial update? */
+				qcom,partial-update-enabled = "single_roi";
+				qcom,panel-roi-alignment = <720 8 8 8 1440 8>;
 			};
 		};	
 	};
