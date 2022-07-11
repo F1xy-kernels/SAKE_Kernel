@@ -832,6 +832,8 @@ asmlinkage void handle_bad_stack(struct pt_regs *regs)
 	pr_emerg("ESR: 0x%08x -- %s\n", esr, esr_get_class_string(esr));
 	pr_emerg("FAR: 0x%016lx\n", far);
 
+	dump_backtrace(NULL, current);
+
 	pr_emerg("Task stack:     [0x%016lx..0x%016lx]\n",
 		 tsk_stk, tsk_stk + THREAD_SIZE);
 	pr_emerg("IRQ stack:      [0x%016lx..0x%016lx]\n",
