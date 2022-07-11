@@ -117,14 +117,8 @@ enum {
 	BINDER_DEBUG_PRIORITY_CAP           = 1U << 13,
 	BINDER_DEBUG_SPINLOCKS              = 1U << 14,
 };
-
-#ifdef DEBUG
-static uint32_t binder_debug_mask = BINDER_DEBUG_USER_ERROR |
-	BINDER_DEBUG_FAILED_TRANSACTION | BINDER_DEBUG_DEAD_TRANSACTION;
-module_param_named(debug_mask, binder_debug_mask, uint, 0644);
-#else
 static uint32_t binder_debug_mask = 0;
-#endif
+module_param_named(debug_mask, binder_debug_mask, uint, 0644);
 
 char *binder_devices_param = CONFIG_ANDROID_BINDER_DEVICES;
 module_param_named(devices, binder_devices_param, charp, 0444);
@@ -197,7 +191,7 @@ struct binder_transaction_log binder_transaction_log;
 struct binder_transaction_log binder_transaction_log_failed;
 
 static struct kmem_cache *binder_node_pool;
-static struct kmem_cache *binder_proc_ext_pool;
+static struct kmem_cache *binder_eproc_pool;
 static struct kmem_cache *binder_ref_death_pool;
 static struct kmem_cache *binder_ref_pool;
 static struct kmem_cache *binder_thread_pool;
@@ -559,8 +553,10 @@ static void binder_wakeup_poll_threads_ilocked(struct binder_proc *proc,
 #ifdef CONFIG_SCHED_WALT
 			if (thread->task && current->signal &&
 				(current->signal->oom_score_adj == 0) &&
-				(current->prio < DEFAULT_PRIO))
-				thread->task->wts.low_latency = true;
+				((current->prio < DEFAULT_PRIO) ||
+					(thread->task->group_leader->prio < MAX_RT_PRIO)))
+				thread->task->wts.low_latency |=
+						WALT_LOW_LATENCY_BINDER;
 #endif
 			if (sync)
 				wake_up_interruptible_sync(&thread->wait);
@@ -624,8 +620,10 @@ static void binder_wakeup_thread_ilocked(struct binder_proc *proc,
 #ifdef CONFIG_SCHED_WALT
 		if (thread->task && current->signal &&
 			(current->signal->oom_score_adj == 0) &&
-			(current->prio < DEFAULT_PRIO))
-			thread->task->wts.low_latency = true;
+			((current->prio < DEFAULT_PRIO) ||
+				(thread->task->group_leader->prio < MAX_RT_PRIO)))
+			thread->task->wts.low_latency |=
+					WALT_LOW_LATENCY_BINDER;
 #endif
 		if (sync)
 			wake_up_interruptible_sync(&thread->wait);
@@ -3254,7 +3252,10 @@ static void binder_transaction(struct binder_proc *proc,
 			goto err_bad_object_type;
 		}
 	}
-	tcomplete->type = BINDER_WORK_TRANSACTION_COMPLETE;
+	if (t->buffer->oneway_spam_suspect)
+		tcomplete->type = BINDER_WORK_TRANSACTION_ONEWAY_SPAM_SUSPECT;
+	else
+		tcomplete->type = BINDER_WORK_TRANSACTION_COMPLETE;
 	t->work.type = BINDER_WORK_TRANSACTION;
 
 	if (reply) {
@@ -4131,9 +4132,15 @@ retry:
 
 			binder_stat_br(proc, thread, cmd);
 		} break;
-		case BINDER_WORK_TRANSACTION_COMPLETE: {
+		case BINDER_WORK_TRANSACTION_COMPLETE:
+		case BINDER_WORK_TRANSACTION_ONEWAY_SPAM_SUSPECT: {
+			if (proc->oneway_spam_detection_enabled &&
+				   w->type == BINDER_WORK_TRANSACTION_ONEWAY_SPAM_SUSPECT)
+				cmd = BR_ONEWAY_SPAM_SUSPECT;
+			else
+				cmd = BR_TRANSACTION_COMPLETE;
 			binder_inner_proc_unlock(proc);
-			cmd = BR_TRANSACTION_COMPLETE;
+
 			kmem_cache_free(binder_work_pool, w);
 			binder_stats_deleted(BINDER_STAT_TRANSACTION_COMPLETE);
 			if (put_user(cmd, (uint32_t __user *)ptr))
@@ -4374,8 +4381,9 @@ retry:
 
 		trace_binder_transaction_received(t);
 #ifdef CONFIG_SCHED_WALT
-		if (current->wts.low_latency)
-			current->wts.low_latency = false;
+		if (current->wts.low_latency & WALT_LOW_LATENCY_BINDER)
+			thread->task->wts.low_latency &=
+						~WALT_LOW_LATENCY_BINDER;
 #endif
 		binder_stat_br(proc, thread, cmd);
 		binder_debug(BINDER_DEBUG_TRANSACTION,
@@ -4570,7 +4578,7 @@ static void binder_free_proc(struct binder_proc *proc)
 	put_task_struct(proc->tsk);
 	put_cred(eproc->cred);
 	binder_stats_deleted(BINDER_STAT_PROC);
-	kmem_cache_free(binder_proc_ext_pool, eproc);
+	kmem_cache_free(binder_eproc_pool, eproc);
 }
 
 static void binder_free_thread(struct binder_thread *thread)
@@ -5162,6 +5170,18 @@ static long binder_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		}
 		break;
 	}
+	case BINDER_ENABLE_ONEWAY_SPAM_DETECTION: {
+		uint32_t enable;
+
+		if (copy_from_user(&enable, ubuf, sizeof(enable))) {
+			ret = -EINVAL;
+			goto err;
+		}
+		binder_inner_proc_lock(proc);
+		proc->oneway_spam_detection_enabled = (bool)enable;
+		binder_inner_proc_unlock(proc);
+		break;
+	}
 	default:
 		ret = -EINVAL;
 		goto err;
@@ -5261,7 +5281,7 @@ static int binder_open(struct inode *nodp, struct file *filp)
 	binder_debug(BINDER_DEBUG_OPEN_CLOSE, "%s: %d:%d\n", __func__,
 		     current->group_leader->pid, current->pid);
 
-	eproc = kmem_cache_zalloc(binder_proc_ext_pool, GFP_KERNEL);
+	eproc = kmem_cache_zalloc(binder_eproc_pool, GFP_KERNEL);
 	proc = &eproc->proc;
 	if (proc == NULL)
 		return -ENOMEM;
@@ -5848,6 +5868,7 @@ static const char * const binder_return_strings[] = {
 	"BR_CLEAR_DEATH_NOTIFICATION_DONE",
 	"BR_FAILED_REPLY",
 	"BR_FROZEN_REPLY",
+	"BR_ONEWAY_SPAM_SUSPECT"
 };
 
 static const char * const binder_command_strings[] = {
@@ -6173,8 +6194,8 @@ static int __init binder_create_pools(void)
 	if (!binder_node_pool)
 		goto err_node_pool;
 
-	binder_proc_ext_pool = KMEM_CACHE(binder_proc_ext, SLAB_HWCACHE_ALIGN);
-	if (!binder_proc_ext_pool)
+	binder_eproc_pool = KMEM_CACHE(binder_proc_ext, SLAB_HWCACHE_ALIGN);
+	if (!binder_eproc_pool)
 		goto err_proc_pool;
 
 	binder_ref_death_pool = KMEM_CACHE(binder_ref_death, SLAB_HWCACHE_ALIGN);
@@ -6220,7 +6241,7 @@ err_thread_pool:
 err_ref_pool:
 	kmem_cache_destroy(binder_ref_death_pool);
 err_ref_death_pool:
-	kmem_cache_destroy(binder_proc_ext_pool);
+	kmem_cache_destroy(binder_eproc_pool);
 err_proc_pool:
 	kmem_cache_destroy(binder_node_pool);
 err_node_pool:
@@ -6232,7 +6253,7 @@ static void __init binder_destroy_pools(void)
 {
 	binder_buffer_pool_destroy();
 	kmem_cache_destroy(binder_node_pool);
-	kmem_cache_destroy(binder_proc_ext_pool);
+	kmem_cache_destroy(binder_eproc_pool);
 	kmem_cache_destroy(binder_ref_death_pool);
 	kmem_cache_destroy(binder_ref_pool);
 	kmem_cache_destroy(binder_thread_pool);
