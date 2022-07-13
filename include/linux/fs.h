@@ -85,6 +85,9 @@ extern int sysctl_protected_symlinks;
 extern int sysctl_protected_hardlinks;
 extern int sysctl_protected_fifos;
 extern int sysctl_protected_regular;
+#ifdef CONFIG_FUSE_DECOUPLING
+extern char *inode_name(struct inode *ino);
+#endif
 
 typedef __kernel_rwf_t rwf_t;
 
@@ -2964,6 +2967,7 @@ static inline ssize_t generic_write_sync(struct kiocb *iocb, ssize_t count)
 	return count;
 }
 
+extern void emergency_sync_synchronous(void);
 extern void emergency_sync(void);
 extern void emergency_remount(void);
 
@@ -3261,6 +3265,9 @@ enum {
 
 	/* filesystem does not support filling holes */
 	DIO_SKIP_HOLES	= 0x02,
+#ifdef CONFIG_FS_HPB
+	DIO_HPB_IO      = 0x10,
+#endif
 };
 
 void dio_end_io(struct bio *bio);
@@ -3526,11 +3533,6 @@ static inline int kiocb_set_rw_flags(struct kiocb *ki, rwf_t flags)
 	if (flags & RWF_APPEND)
 		ki->ki_flags |= IOCB_APPEND;
 	return 0;
-}
-
-static inline rwf_t iocb_to_rw_flags(int ifl, int iocb_mask)
-{
-	return ifl & iocb_mask;
 }
 
 static inline ino_t parent_ino(struct dentry *dentry)
