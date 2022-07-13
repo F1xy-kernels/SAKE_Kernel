@@ -59,7 +59,7 @@ void ksys_sync_helper(void)
 	start = ktime_get();
 	ksys_sync();
 	elapsed_msecs = ktime_to_ms(ktime_sub(ktime_get(), start));
-	pr_info("Filesystems sync: %ld.%03ld seconds\n",
+	pr_debug("Filesystems sync: %ld.%03ld seconds\n",
 		elapsed_msecs / MSEC_PER_SEC, elapsed_msecs % MSEC_PER_SEC);
 }
 EXPORT_SYMBOL_GPL(ksys_sync_helper);
@@ -840,9 +840,6 @@ static ssize_t pm_freeze_timeout_store(struct kobject *kobj,
 				       const char *buf, size_t n)
 {
 	unsigned long val;
-
-	if (IS_ENABLED(CONFIG_ANDROID))
-		return n;
 
 	if (kstrtoul(buf, 10, &val))
 		return -EINVAL;
