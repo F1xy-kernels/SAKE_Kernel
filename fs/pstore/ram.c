@@ -427,8 +427,8 @@ static int notrace ramoops_pstore_write(struct pstore_record *record)
 				     record->size);
 		return 0;
 	} else if (record->type == PSTORE_TYPE_PMSG) {
-		persistent_ram_write(cxt->mprz, record->buf, record->size);
-		return 0;
+		pr_warn_ratelimited("PMSG shouldn't call %s\n", __func__);
+		return -EINVAL;
 	}
 
 	if (record->type != PSTORE_TYPE_DMESG)
@@ -852,13 +852,13 @@ static int ramoops_probe(struct platform_device *pdev)
 
 	dump_mem_sz = cxt->size - cxt->console_size - cxt->ftrace_size
 			- cxt->pmsg_size;
-	err = ramoops_init_przs("dmesg", dev, cxt, &cxt->dprzs, &paddr,
+	err = ramoops_init_przs("console", dev, cxt, &cxt->dprzs, &paddr,
 				dump_mem_sz, cxt->record_size,
 				&cxt->max_dump_cnt, 0, 0);
 	if (err)
 		goto fail_out;
 
-	err = ramoops_init_prz("console", dev, cxt, &cxt->cprz, &paddr,
+	err = ramoops_init_prz("unused", dev, cxt, &cxt->cprz, &paddr,
 			       cxt->console_size, 0);
 	if (err)
 		goto fail_init_cprz;

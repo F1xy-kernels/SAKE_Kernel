@@ -165,17 +165,10 @@ enum {
 struct fuse_conn;
 struct fuse_release_args;
 
-/**
- * Reference to lower filesystem file for read/write operations handled in
- * passthrough mode.
- * This struct also tracks the credentials to be used for handling read/write
- * operations.
- */
-struct fuse_passthrough {
+struct fuse_shortcircuit {
 	struct file *filp;
 	struct cred *cred;
 };
-
 /** FUSE specific file data */
 struct fuse_file {
 	/** Fuse connection for this file */
@@ -221,8 +214,7 @@ struct fuse_file {
 
 	} readdir;
 
-	/** Container for data related to the passthrough functionality */
-	struct fuse_passthrough passthrough;
+	struct fuse_shortcircuit sct;
 
 	/** RB node to be linked on fuse_conn->polled_files */
 	struct rb_node polled_node;
@@ -269,6 +261,10 @@ struct fuse_args {
 	bool may_block:1;
 	struct fuse_in_arg in_args[3];
 	struct fuse_arg out_args[2];
+	struct fuse_shortcircuit sct;
+#ifdef CONFIG_FUSE_DECOUPLING
+	char *iname;
+#endif
 	void (*end)(struct fuse_conn *fc, struct fuse_args *args, int error);
 
 	/* Path used for completing d_canonical_path */
@@ -372,6 +368,12 @@ struct fuse_req {
 	struct {
 		struct fuse_out_header h;
 	} out;
+
+	struct fuse_shortcircuit sct;
+
+#ifdef CONFIG_FUSE_DECOUPLING
+	char *iname;
+#endif
 
 	/** Used to wake up the task waiting for completion of request*/
 	wait_queue_head_t waitq;
@@ -740,9 +742,7 @@ struct fuse_conn {
 	/* Do not show mount options */
 	unsigned int no_mount_options:1;
 
-	/** Passthrough mode for read/write IO */
-	unsigned int passthrough:1;
-
+	unsigned int shortcircuit:1;
 	/** The number of requests waiting for completion */
 	atomic_t num_waiting;
 
@@ -778,12 +778,6 @@ struct fuse_conn {
 
 	/** List of device instances belonging to this connection */
 	struct list_head devices;
-
-	/** IDR for passthrough requests */
-	struct idr passthrough_req;
-
-	/** Protects passthrough_req */
-	spinlock_t passthrough_req_lock;
 };
 
 static inline struct fuse_conn *get_fuse_conn_super(struct super_block *sb)
@@ -1118,6 +1112,9 @@ extern const struct xattr_handler *fuse_no_acl_xattr_handlers[];
 struct posix_acl;
 struct posix_acl *fuse_get_acl(struct inode *inode, int type);
 int fuse_set_acl(struct inode *inode, struct posix_acl *acl, int type);
+#ifdef CONFIG_FUSE_DECOUPLING
+extern int sct_mode;
+#endif
 
 
 /* readdir.c */
@@ -1134,13 +1131,10 @@ unsigned int fuse_len_args(unsigned int numargs, struct fuse_arg *args);
 u64 fuse_get_unique(struct fuse_iqueue *fiq);
 void fuse_free_conn(struct fuse_conn *fc);
 
-/* passthrough.c */
-int fuse_passthrough_open(struct fuse_dev *fud, u32 lower_fd);
-int fuse_passthrough_setup(struct fuse_conn *fc, struct fuse_file *ff,
-			   struct fuse_open_out *openarg);
-void fuse_passthrough_release(struct fuse_passthrough *passthrough);
-ssize_t fuse_passthrough_read_iter(struct kiocb *iocb, struct iov_iter *to);
-ssize_t fuse_passthrough_write_iter(struct kiocb *iocb, struct iov_iter *from);
-ssize_t fuse_passthrough_mmap(struct file *file, struct vm_area_struct *vma);
+int fuse_shortcircuit_setup(struct fuse_conn *fc, struct fuse_req *req);
+ssize_t fuse_shortcircuit_read_iter(struct kiocb *iocb, struct iov_iter *to);
+ssize_t fuse_shortcircuit_write_iter(struct kiocb *iocb, struct iov_iter *from);
+ssize_t fuse_shortcircuit_mmap(struct file *file, struct vm_area_struct *vma);
+void fuse_shortcircuit_release(struct fuse_file *ff);
 
 #endif /* _FS_FUSE_I_H */
