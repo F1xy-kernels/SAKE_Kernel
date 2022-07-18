@@ -77,7 +77,7 @@
 #define QUERY_REQ_TIMEOUT 1500 /* 1.5 seconds */
 
 /* Task management command timeout */
-#define TM_CMD_TIMEOUT	500 /* msecs */
+#define TM_CMD_TIMEOUT	100 /* msecs */
 
 /* maximum number of retries for a general UIC command  */
 #define UFS_UIC_COMMAND_RETRIES 3
@@ -2137,26 +2137,15 @@ int ufshcd_copy_query_response(struct ufs_hba *hba, struct ufshcd_lrb *lrbp)
 /**
  * ufshcd_hba_capabilities - Read controller capabilities
  * @hba: per adapter instance
- *
- * Return: 0 on success, negative on error.
  */
-static inline int ufshcd_hba_capabilities(struct ufs_hba *hba)
+static inline void ufshcd_hba_capabilities(struct ufs_hba *hba)
 {
-	int err;
-
 	hba->capabilities = ufshcd_readl(hba, REG_CONTROLLER_CAPABILITIES);
 
 	/* nutrs and nutmrs are 0 based values */
 	hba->nutrs = (hba->capabilities & MASK_TRANSFER_REQUESTS_SLOTS) + 1;
 	hba->nutmrs =
 	((hba->capabilities & MASK_TASK_MANAGEMENT_REQUEST_SLOTS) >> 16) + 1;
-
-	/* Read crypto capabilities */
-	err = ufshcd_hba_init_crypto_capabilities(hba);
-	if (err)
-		dev_err(hba->dev, "crypto setup failed\n");
-
-	return err;
 }
 
 /**
@@ -2428,9 +2417,6 @@ static void ufshcd_prepare_req_desc_hdr(struct ufshcd_lrb *lrbp,
 				<< UPIU_COMMAND_TYPE_OFFSET);
 	if (lrbp->intr_cmd)
 		dword_0 |= UTP_REQ_DESC_INT_CMD;
-
-	/* Prepare crypto related dwords */
-	ufshcd_prepare_req_desc_hdr_crypto(lrbp, &dword_0, &dword_1, &dword_3);
 
 	/* Transfer request descriptor header fields */
 	if (ufshcd_lrbp_crypto_enabled(lrbp)) {
@@ -4990,7 +4976,6 @@ static int ufshcd_change_queue_depth(struct scsi_device *sdev, int depth)
  */
 static int ufshcd_slave_configure(struct scsi_device *sdev)
 {
-	struct ufs_hba *hba = shost_priv(sdev->host);
 	struct request_queue *q = sdev->request_queue;
 	struct ufs_hba *hba = shost_priv(sdev->host);
 
@@ -6625,7 +6610,6 @@ static int ufshcd_issue_devman_upiu_cmd(struct ufs_hba *hba,
 	lrbp->task_tag = tag;
 	lrbp->lun = 0;
 	lrbp->intr_cmd = true;
-	ufshcd_prepare_lrbp_crypto(NULL, lrbp);
 	hba->dev_cmd.type = cmd_type;
 
 	switch (hba->ufs_version) {
@@ -8844,7 +8828,7 @@ static void ufshcd_hba_vreg_set_hpm(struct ufs_hba *hba)
 static int ufshcd_suspend(struct ufs_hba *hba, enum ufs_pm_op pm_op)
 {
 	int ret = 0;
-	enum ufs_pm_level pm_lvl;
+	enum ufs_pm_level pm_lvl = UFS_PM_LVL_0;
 	enum ufs_dev_pwr_mode req_dev_pwr_mode;
 	enum uic_link_state req_link_state;
 
@@ -9417,7 +9401,6 @@ EXPORT_SYMBOL_GPL(ufshcd_remove);
  */
 void ufshcd_dealloc_host(struct ufs_hba *hba)
 {
-	ufshcd_crypto_destroy_keyslot_manager(hba);
 	scsi_host_put(hba->host);
 }
 EXPORT_SYMBOL_GPL(ufshcd_dealloc_host);
@@ -9527,9 +9510,7 @@ int ufshcd_init(struct ufs_hba *hba, void __iomem *mmio_base, unsigned int irq)
 		goto out_error;
 
 	/* Read capabilities registers */
-	err = ufshcd_hba_capabilities(hba);
-	if (err)
-		goto out_disable;
+	ufshcd_hba_capabilities(hba);
 
 	/* Get UFS version supported by the controller */
 	hba->ufs_version = ufshcd_get_ufs_version(hba);
