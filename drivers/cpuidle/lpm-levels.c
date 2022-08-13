@@ -220,11 +220,11 @@ static void disable_rimps_timer(struct lpm_cpu *cpu)
 	if (!cpu->rimps_tmr_base)
 		return;
 
-	spin_lock(&cpu->cpu_lock);
 	ctrl_val = readl_relaxed(cpu->rimps_tmr_base + TIMER_CTRL);
 	writel_relaxed(ctrl_val & ~(TIMER_CONTROL_EN),
 				cpu->rimps_tmr_base + TIMER_CTRL);
-	spin_unlock(&cpu->cpu_lock);
+	/* Ensure the write is complete before returning. */
+	wmb();
 
 }
 
@@ -247,7 +247,6 @@ static void program_rimps_timer(struct lpm_cpu *cpu)
 		return;
 
 	next_event = us_to_ticks(next_event);
-	spin_lock(&cpu->cpu_lock);
 
 	/* RIMPS timer pending should be read before programming timeout val */
 	readl(cpu->rimps_tmr_base + TIMER_PENDING);
@@ -257,7 +256,8 @@ static void program_rimps_timer(struct lpm_cpu *cpu)
 	writel_relaxed(next_event, cpu->rimps_tmr_base + TIMER_VAL);
 	writel_relaxed(ctrl_val | (TIMER_CONTROL_EN),
 				cpu->rimps_tmr_base + TIMER_CTRL);
-	spin_unlock(&cpu->cpu_lock);
+	/* Ensure the write is complete before returning. */
+	wmb();
 }
 
 #ifdef CONFIG_SMP
