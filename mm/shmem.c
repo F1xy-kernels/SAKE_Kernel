@@ -251,7 +251,7 @@ static const struct inode_operations shmem_inode_operations;
 static const struct inode_operations shmem_dir_inode_operations;
 static const struct inode_operations shmem_special_inode_operations;
 static const struct vm_operations_struct shmem_vm_ops;
-struct file_system_type shmem_fs_type;
+static struct file_system_type shmem_fs_type;
 
 bool vma_is_shmem(struct vm_area_struct *vma)
 {
@@ -655,15 +655,16 @@ next:
 			__inc_node_page_state(page, NR_SHMEM_THPS);
 		}
 		mapping->nrpages += nr;
-		__mod_lruvec_page_state(page, NR_FILE_PAGES, nr);
-		__mod_lruvec_page_state(page, NR_SHMEM, nr);
+		__mod_node_page_state(page_pgdat(page), NR_FILE_PAGES, nr);
+		__mod_node_page_state(page_pgdat(page), NR_SHMEM, nr);
 unlock:
 		xas_unlock_irq(&xas);
 	} while (xas_nomem(&xas, gfp));
 
 	if (xas_error(&xas)) {
-		error = xas_error(&xas);
-		goto error;
+		page->mapping = NULL;
+		page_ref_sub(page, nr);
+		return xas_error(&xas);
 	}
 
 	return 0;
@@ -687,8 +688,8 @@ static void shmem_delete_from_page_cache(struct page *page, void *radswap)
 	error = shmem_replace_entry(mapping, page->index, page, radswap);
 	page->mapping = NULL;
 	mapping->nrpages--;
-	__dec_lruvec_page_state(page, NR_FILE_PAGES);
-	__dec_lruvec_page_state(page, NR_SHMEM);
+	__dec_node_page_state(page, NR_FILE_PAGES);
+	__dec_node_page_state(page, NR_SHMEM);
 	xa_unlock_irq(&mapping->i_pages);
 	put_page(page);
 	BUG_ON(error);
@@ -1606,9 +1607,8 @@ static int shmem_replace_page(struct page **pagep, gfp_t gfp,
 	xa_lock_irq(&swap_mapping->i_pages);
 	error = shmem_replace_entry(swap_mapping, swap_index, oldpage, newpage);
 	if (!error) {
-		mem_cgroup_migrate(oldpage, newpage);
-		__inc_lruvec_page_state(newpage, NR_FILE_PAGES);
-		__dec_lruvec_page_state(oldpage, NR_FILE_PAGES);
+		__inc_node_page_state(newpage, NR_FILE_PAGES);
+		__dec_node_page_state(oldpage, NR_FILE_PAGES);
 	}
 	xa_unlock_irq(&swap_mapping->i_pages);
 
@@ -1620,6 +1620,7 @@ static int shmem_replace_page(struct page **pagep, gfp_t gfp,
 		 */
 		oldpage = newpage;
 	} else {
+		mem_cgroup_migrate(oldpage, newpage);
 		lru_cache_add(newpage);
 		*pagep = newpage;
 	}
@@ -1647,6 +1648,7 @@ static int shmem_swapin_page(struct inode *inode, pgoff_t index,
 	struct address_space *mapping = inode->i_mapping;
 	struct shmem_inode_info *info = SHMEM_I(inode);
 	struct mm_struct *charge_mm = vma ? vma->vm_mm : current->mm;
+	struct mem_cgroup *memcg;
 	struct page *page;
 	swp_entry_t swap;
 	int error;
@@ -1694,6 +1696,7 @@ static int shmem_swapin_page(struct inode *inode, pgoff_t index,
 	error = shmem_add_to_page_cache(page, mapping, index,
 					swp_to_radix_entry(swap), gfp,
 					charge_mm);
+
 	if (error)
 		goto failed;
 
@@ -1742,6 +1745,7 @@ static int shmem_getpage_gfp(struct inode *inode, pgoff_t index,
 	struct shmem_inode_info *info = SHMEM_I(inode);
 	struct shmem_sb_info *sbinfo;
 	struct mm_struct *charge_mm;
+	struct mem_cgroup *memcg;
 	struct page *page;
 	enum sgp_type sgp_huge = sgp;
 	pgoff_t hindex = index;
@@ -1876,8 +1880,9 @@ alloc_nohuge:
 	error = shmem_add_to_page_cache(page, mapping, hindex,
 					NULL, gfp & GFP_RECLAIM_MASK,
 					charge_mm);
-	if (error)
+	if (error) {
 		goto unacct;
+	}
 	lru_cache_add(page);
 
 	spin_lock_irq(&info->lock);
@@ -2306,7 +2311,7 @@ int shmem_mfill_atomic_pte(struct mm_struct *dst_mm,
 	void *page_kaddr;
 	struct page *page;
 	int ret;
-	pgoff_t max_off;
+	pgoff_t offset, max_off;
 
 	if (!shmem_inode_acct_block(inode, 1)) {
 		/*
@@ -2356,20 +2361,15 @@ int shmem_mfill_atomic_pte(struct mm_struct *dst_mm,
 	__SetPageUptodate(page);
 
 	ret = -EFAULT;
+	offset = linear_page_index(dst_vma, dst_addr);
 	max_off = DIV_ROUND_UP(i_size_read(inode), PAGE_SIZE);
-	if (unlikely(pgoff >= max_off))
-		goto out_release;
-
-	ret = mem_cgroup_try_charge_delay(page, dst_mm, gfp, &memcg, false);
-	if (ret)
+	if (unlikely(offset >= max_off))
 		goto out_release;
 
 	ret = shmem_add_to_page_cache(page, mapping, pgoff, NULL,
-						gfp & GFP_RECLAIM_MASK);
+					gfp & GFP_RECLAIM_MASK, dst_mm);
 	if (ret)
-		goto out_release_uncharge;
-
-	mem_cgroup_commit_charge(page, memcg, false, false);
+		goto out_release;
 
 	ret = mfill_atomic_install_pte(dst_mm, dst_pmd, dst_vma, dst_addr,
 				       page, true);
@@ -3824,7 +3824,7 @@ int shmem_init_fs_context(struct fs_context *fc)
 	return 0;
 }
 
-struct file_system_type shmem_fs_type = {
+static struct file_system_type shmem_fs_type = {
 	.owner		= THIS_MODULE,
 	.name		= "tmpfs",
 	.init_fs_context = shmem_init_fs_context,
@@ -4106,7 +4106,7 @@ EXPORT_SYMBOL_GPL(shmem_file_setup_with_mnt);
 
 /**
  * shmem_zero_setup - setup a shared anonymous mapping
- * @vma: the vma to be mmapped is prepared by do_mmap
+ * @vma: the vma to be mmapped is prepared by do_mmap_pgoff
  */
 int shmem_zero_setup(struct vm_area_struct *vma)
 {

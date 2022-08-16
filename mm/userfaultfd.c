@@ -74,7 +74,7 @@ int mfill_atomic_install_pte(struct mm_struct *dst_mm, pmd_t *dst_pmd,
 	inc_mm_counter(dst_mm, mm_counter(page));
 
 	if (newly_allocated)
-		lru_cache_add_active_or_unevictable(page, dst_vma);
+		lru_cache_add_inactive_or_unevictable(page, dst_vma);
 
 	set_pte_at(dst_mm, dst_addr, dst_pte, _dst_pte);
 
@@ -117,8 +117,6 @@ static int mcopy_atomic_pte(struct mm_struct *dst_mm,
 			/* don't free the page */
 			goto out;
 		}
-
-		flush_dcache_page(page);
 	} else {
 		page = *pagep;
 		*pagep = NULL;
@@ -137,11 +135,8 @@ static int mcopy_atomic_pte(struct mm_struct *dst_mm,
 
 	ret = mfill_atomic_install_pte(dst_mm, dst_pmd, dst_vma, dst_addr,
 				       page, true);
-	if (ret) {
-		mem_cgroup_cancel_charge(page, memcg, false);
+	if (ret)
 		goto out_release;
-	}
-	mem_cgroup_commit_charge(page, memcg, false, false);
 out:
 	return ret;
 out_release:
@@ -646,7 +641,6 @@ retry:
 				err = -EFAULT;
 				goto out;
 			}
-			flush_dcache_page(page);
 			goto retry;
 		} else
 			BUG_ON(page);
