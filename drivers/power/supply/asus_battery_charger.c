@@ -12,7 +12,6 @@
 #define THERMAL_ALERT_WITH_AC		2
 
 #define OEM_WORK_EVENT			16
-#define WORK_PANEL_CHECK		3
 #define WORK_18W_WORKAROUND		5
 
 #define OEM_THERMAL_THRESHOLD		23
@@ -45,8 +44,6 @@ struct oem_enable_change_msg {
 	u32 enable;
 };
 
-extern bool g_Charger_mode;
-
 static int handle_usb_online(struct notifier_block *nb, unsigned long status,
 			     void *unused)
 {
@@ -59,18 +56,12 @@ static int handle_usb_online(struct notifier_block *nb, unsigned long status,
 	abc->usb_online = status;
 
 	if (status) {
-		if (!g_Charger_mode) {
-			cancel_delayed_work_sync(&abc->panel_check_work);
-			schedule_delayed_work(&abc->panel_check_work, 62 * HZ);
-		}
-
 		cancel_delayed_work_sync(&abc->workaround_18w_work);
 		schedule_delayed_work(&abc->workaround_18w_work, 26 * HZ);
 
 		cancel_delayed_work_sync(&abc->thermal_policy_work);
 		schedule_delayed_work(&abc->thermal_policy_work, 68 * HZ);
 	} else {
-		cancel_delayed_work_sync(&abc->panel_check_work);
 		cancel_delayed_work_sync(&abc->workaround_18w_work);
 		cancel_delayed_work_sync(&abc->thermal_policy_work);
 	}
@@ -142,15 +133,6 @@ static void usb_thermal_worker(struct work_struct *work)
 out:
 	schedule_delayed_work(&abc->usb_thermal_work,
 			      msecs_to_jiffies(USB_THERMAL_WORK_MSECS));
-}
-
-static void panel_check_worker(struct work_struct *work)
-{
-	struct asus_battery_chg *abc = dwork_to_abc(work, panel_check_work);
-
-	write_property_work_event(abc, WORK_PANEL_CHECK);
-
-	schedule_delayed_work(&abc->panel_check_work, 10 * HZ);
 }
 
 static void workaround_18w_worker(struct work_struct *work)
@@ -368,7 +350,6 @@ int asus_battery_charger_init(struct asus_battery_chg *abc)
 	INIT_DELAYED_WORK(&abc->usb_thermal_work, usb_thermal_worker);
 	schedule_delayed_work(&abc->usb_thermal_work, 0);
 
-	INIT_DELAYED_WORK(&abc->panel_check_work, panel_check_worker);
 	INIT_DELAYED_WORK(&abc->workaround_18w_work, workaround_18w_worker);
 	INIT_DELAYED_WORK(&abc->thermal_policy_work, thermal_policy_worker);
 
@@ -380,7 +361,6 @@ int asus_battery_charger_init(struct asus_battery_chg *abc)
 int asus_battery_charger_deinit(struct asus_battery_chg *abc)
 {
 	cancel_delayed_work_sync(&abc->usb_thermal_work);
-	cancel_delayed_work_sync(&abc->panel_check_work);
 	cancel_delayed_work_sync(&abc->workaround_18w_work);
 	cancel_delayed_work_sync(&abc->thermal_policy_work);
 
