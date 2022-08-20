@@ -12,7 +12,6 @@ struct asus_battery_chg {
 	struct battery_chg_dev		*bcdev;
 	struct pmic_glink_client	*client;
 	struct gpio_desc		*otg_switch;
-	bool				usb_present;
 };
 
 int asus_battery_charger_init(struct asus_battery_chg *abc);
