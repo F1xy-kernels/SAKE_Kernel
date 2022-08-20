@@ -387,11 +387,6 @@ void battery_chg_complete_ack(struct battery_chg_dev *bcdev)
 	complete(&bcdev->ack);
 }
 
-struct device *battery_chg_device(struct battery_chg_dev *bcdev)
-{
-	return bcdev->dev;
-}
-
 static int write_property_id(struct battery_chg_dev *bcdev,
 			struct psy_state *pst, u32 prop_id, u32 val)
 {
