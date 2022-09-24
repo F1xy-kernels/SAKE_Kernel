@@ -741,6 +741,8 @@ KBUILD_CFLAGS	+= $(call cc-disable-warning, enum-conversion)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, address)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, address-of-packed-member)
 KBUILD_CFLAGS   += $(call cc-disable-warning, format)
+KBUILD_CFLAGS   += $(call cc-disable-warning, attributes)
+KBUILD_CFLAGS   += $(call cc-disable-warning, unused-variable)
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE
 KBUILD_CFLAGS += -O2
