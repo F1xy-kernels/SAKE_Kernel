@@ -1378,13 +1378,13 @@ static void handle_notification(struct battery_chg_dev *bcdev, void *data,
     case OEM_ASUS_EVTLOG_IND:
         if (len == sizeof(*evtlog_msg)) {
             evtlog_msg = data;
-            pr_err("[adsp] evtlog= %s\n", evtlog_msg->buf);
+            pr_debug("[adsp] evtlog= %s\n", evtlog_msg->buf);
         }
         break;
     case OEM_PD_EVTLOG_IND:
         if (len == sizeof(*evtlog_msg)) {
             evtlog_msg = data;
-            pr_err("[PD] %s\n", evtlog_msg->buf);
+            pr_debug("[PD] %s\n", evtlog_msg->buf);
         }
         break;
     case OEM_SET_OTG_WA:
