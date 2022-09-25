@@ -438,21 +438,20 @@ struct cpufreq_pair {
 #ifdef CONFIG_ARM_QCOM_CPUFREQ_HW_TABLE_EDIT
 static struct cpufreq_pair preset_pairs[] = {
 	/* Little cluster */
+	{ 0, 691200 },
 	{ 0, 1209600 },
 	{ 0, 1612800 },
 	{ 0, 1804800 },
 	/* Big cluster */
-	{ 4, 1075200 },
+	{ 4, 710400 },
 	{ 4, 1670400 },
 	{ 4, 1996800 },
-	{ 4, 2419200 },
 	/* Prime core */
 	{ 7, 844800 },
 	{ 7, 1075200 },
 	{ 7, 1670400 },
 	{ 7, 1900800 },
 	{ 7, 2265600 },
-	{ 7, 2841600 },
 };
 
 static void invalidate_freqs(int cpu, int entries, struct cpufreq_frequency_table *table)
