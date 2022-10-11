@@ -5407,6 +5407,7 @@
 #include "lahaina-vidc.dtsi"
 #include "lahaina-cvp.dtsi"
 #include "lahaina-pcie.dtsi"
+#include "lahaina-coresight.dtsi"
 #include "msm-qvr-external.dtsi"
 
 &pcie0_rp {
