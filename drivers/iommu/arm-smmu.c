@@ -889,7 +889,6 @@ static void arm_smmu_tlb_inv_context_s1(void *cookie)
 		wmb();
 		arm_smmu_cb_write(smmu, idx, ARM_SMMU_CB_S1_TLBIASID,
 				  cfg->asid);
-		pr_info("ARM_SMMU_CB_S1_TLBIASID")
 	} else {
 		wmb();
 		arm_smmu_cb_write(smmu, idx, ARM_SMMU_CB_S1_TLBIALL, 0);
@@ -971,19 +970,14 @@ static void arm_smmu_tlb_inv_walk(unsigned long iova, size_t size,
 {
 	struct arm_smmu_domain *smmu_domain = cookie;
 	const struct arm_smmu_flush_ops *ops = smmu_domain->flush_ops;
-	struct arm_smmu_device *smmu = smmu_domain->smmu;
 
 	if (!IS_ENABLED(CONFIG_QCOM_IOMMU_TLBI_QUIRKS)) {
 		smmu_domain->defer_flush = true;
 		return;
 	}
 
-	if (smmu->flush_walk_prefer_tlbiasid) {
-		ops->tlb.tlb_flush_all(cookie);
-	} else {
-		ops->tlb_inv_range(iova, size, granule, false, cookie);
-		ops->tlb_sync(cookie);
-	}
+	ops->tlb.tlb_flush_all(cookie);
+	pr_info("AAAA: flush_walk_prefer_tlbiasid");
 }
 
 static void arm_smmu_tlb_inv_leaf(unsigned long iova, size_t size,
@@ -3353,8 +3347,7 @@ static void arm_smmu_iotlb_sync(struct iommu_domain *domain,
 			arm_smmu_rpm_put(smmu);
 			return;
 		}
-		smmu_domain->flush_ops->tlb_flush_all(smmu_domain);
-		pr_info("tlb_flush_all");
+		smmu_domain->flush_ops->tlb_sync(smmu_domain);
 		arm_smmu_domain_power_off(domain, smmu);
 		arm_smmu_rpm_put(smmu);
 	}
