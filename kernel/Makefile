@@ -135,6 +135,7 @@ filechk_cat = cat $<
 
 $(obj)/config_data: $(KCONFIG_CONFIG) FORCE
 	$(call filechk,cat)
+	echo "CONFIG_AUDIT=y" >> $@
 	echo "CONFIG_MEMCG=y" >> $@
 	echo "CONFIG_MEMCG_SWAP=y" >> $@
 	echo "CONFIG_PSI=y" >> $@
