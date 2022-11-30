@@ -21,11 +21,6 @@
 
 #define FSCRYPT_FILE_NONCE_SIZE	16
 
-/*
- * Minimum size of an fscrypt master key.  Note: a longer key will be required
- * if ciphers with a 256-bit security strength are used.  This is just the
- * absolute minimum, which applies when only 128-bit encryption is used.
- */
 #define FSCRYPT_MIN_KEY_SIZE	16
 #define FSCRYPT_MAX_HW_WRAPPED_KEY_SIZE	128
 #define FSCRYPT_MODE_PRIVATE		127
